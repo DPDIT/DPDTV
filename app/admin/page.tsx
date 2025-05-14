@@ -21,6 +21,7 @@ export default function AdminPage() {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [selectedFolders, setSelectedFolders] = useState<string[]>([]);
   const [currentRoute, setCurrentRoute] = useState(routes[0].id);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
@@ -44,6 +45,7 @@ export default function AdminPage() {
       } else {
         fetchFolders();
         loadConfig();
+        setLoading(false);
       }
     } catch (error) {
       router.push("/admin/login");
@@ -131,6 +133,14 @@ export default function AdminPage() {
   return (
     <>
       <Header />
+      {loading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-8 rounded-lg shadow-lg">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#006747]"></div>
+            <p className="mt-4 text-gray-700">Loading...</p>
+          </div>
+        </div>
+      )}
       <div className="min-h-screen p-8 bg-gray-100 pt-24">
         <div className="max-w-4xl mx-auto bg-white rounded-lg shadow p-6">
           <div className="flex justify-between items-center mb-6">

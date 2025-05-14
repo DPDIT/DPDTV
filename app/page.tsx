@@ -19,12 +19,6 @@ export default function Home() {
           >
             View External Images
           </Link>
-          <Link
-            href="/admin"
-            className="w-full px-8 py-4 bg-[#006747] text-white rounded-lg hover:bg-[#8B5B29] transition-colors text-xl text-center"
-          >
-            Admin Settings
-          </Link>
         </div>
       </div>
     </>

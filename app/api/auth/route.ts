@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
+import { env } from "process";
 
-const ADMIN_PASSWORD = "dpdtv2025!";
+const ADMIN_PASSWORD = env.ADMIN_PASSWORD;
 
 export async function POST(request: Request) {
   try {

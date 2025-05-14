@@ -9,7 +9,7 @@ export default function Header() {
       <div className="absolute top-4 right-4">
         <Link href={"/"}>
           <Image
-            src="/dpdtv.png"
+            src="/logo/dpdtv.png"
             alt="DPD TV Logo"
             width={200}
             height={200}

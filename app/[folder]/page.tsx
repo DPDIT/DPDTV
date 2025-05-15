@@ -11,6 +11,7 @@ interface Config {
 }
 
 export default function ImageCarousel() {
+  const [isLoading, setIsLoading] = useState(true);
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
   const [images, setImages] = useState<string[]>([]);
   const [progress, setProgress] = useState(0);
@@ -40,7 +41,7 @@ export default function ImageCarousel() {
       if (emblaApi && data.images.length > 0) {
         const interval = setInterval(() => {
           emblaApi.scrollNext();
-        }, config.duration * 1000); // Convert seconds to milliseconds
+        }, config.duration * 1000);
 
         return () => clearInterval(interval);
       }
@@ -50,12 +51,14 @@ export default function ImageCarousel() {
   }, [folder, emblaApi, config.duration]);
 
   useEffect(() => {
-    loadConfig();
-  }, [loadConfig]);
-
-  useEffect(() => {
-    loadImages();
-  }, [loadImages]);
+    const initialize = async () => {
+      setIsLoading(true);
+      await loadConfig();
+      await loadImages();
+      setIsLoading(false);
+    };
+    initialize();
+  }, []);
 
   useEffect(() => {
     if (!emblaApi) return;
@@ -75,43 +78,52 @@ export default function ImageCarousel() {
     };
   }, [emblaApi]);
 
-  // Check if the current folder is in the selected folders or if there are no images
-  if (!config.selectedFolders.includes(folder) || images.length === 0) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-black text-white">
-        <h1 className="text-2xl">
-          This folder is not enabled in the admin settings.
-        </h1>
-      </div>
-    );
-  }
-
   return (
-    <div className="fixed inset-0 w-full h-full">
-      <div className="relative w-full h-full" ref={emblaRef}>
-        <div className="flex w-full h-full">
-          {images.map((image, index) => (
-            <div
-              key={index}
-              className="flex-[0_0_100%] min-w-0 relative w-full h-full"
-            >
-              <Image
-                src={`/images/${folder}/${image}`}
-                alt={`Slide ${index + 1}`}
-                fill
-                className="object-cover bg-black"
-                priority={index === 0}
-              />
-            </div>
-          ))}
+    <>
+      {isLoading ? (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-8 rounded-lg shadow-lg">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#006747]"></div>
+            <p className="mt-4 text-gray-700">Loading...</p>
+          </div>
         </div>
-      </div>
-      <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-800/30">
-        <div
-          className="h-full bg-white transition-all duration-300 ease-out"
-          style={{ width: `${progress}%` }}
-        />
-      </div>
-    </div>
+      ) : !config.selectedFolders.includes(folder) || images.length === 0 ? (
+        <div className="fixed inset-0 flex items-center justify-center bg-black text-white">
+          <h1 className="text-2xl">
+            This folder is not enabled in the admin settings.
+          </h1>
+        </div>
+      ) : (
+        <div className="fixed inset-0 w-full h-full">
+          <div className="relative w-full h-full" ref={emblaRef}>
+            <div className="flex w-full h-full">
+              {images.map((image, index) => (
+                <div
+                  key={index}
+                  className="flex-[0_0_100%] min-w-0 relative w-full h-full"
+                >
+                  <Image
+                    src={`/images/${folder}/${image}`}
+                    alt={`Slide ${index + 1}`}
+                    fill
+                    className="object-cover bg-black"
+                    priority={index === 0}
+                    quality={100}
+                    loading={index === 0 ? "eager" : "lazy"}
+                    sizes="100vw"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-800/30">
+            <div
+              className="h-full bg-white transition-all duration-300 ease-out"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+      )}
+    </>
   );
 }

@@ -1,36 +1,86 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DPDTV - Digital Picture Display TV
 
-## Getting Started
+## Overview
 
-First, run the development server:
+DPDTV is a digital picture display system that allows you to showcase images in a slideshow format. Perfect for photo displays or information screens.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Quick Start Guide
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Viewing the Slideshow
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Open the application in your web browser (https://dpdtv.vercel.app)
+2. Select Internal or External base on the location of the TV
+3. The slideshow will automatically start
+4. If on a desktop, you can use a mouse to manually navigate through images if needed
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Managing Images (For Administrators)
 
-## Learn More
+#### Adding New Images (Internal)
 
-To learn more about Next.js, take a look at the following resources:
+1. Navigate to (\\police\dfs\OCC\1.3 Communications\1.3.8 DPD TV\2025\Internal)
+2. Copy your new images into this folder
+3. The slideshow will automatically detect and display the new images (24 hour delay)
+4. Head to (https://dpdtv.vercel.app/admin) and login using the provided password
+5. Ensure the "select route" field is set to "internal images"
+6. Select the folder(s) that you want displayed. (Note: Image names will not be displayed, selecting a folder will display ALL images in that folder)
+7. Click "Save Settings"
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+#### Adding New Images (External)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Navigate to (\\police\dfs\OCC\1.3 Communications\1.3.8 DPD TV\2025\External)
+2. Copy your new images into this folder
+3. The slideshow will automatically detect and display the new images (24 hour delay)
+4. Head to (https://dpdtv.vercel.app/admin) and login using the provided password
+5. Ensure the "select route" field is set to "external images"
+6. Select the folder(s) that you want displayed. (Note: Image names will not be displayed, selecting a folder will display ALL images in that folder)
+7. Click "Save Settings"
 
-## Deploy on Vercel
+#### Image Best Practices
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Recommended image size: 1920x1080 pixels
+- Keep file sizes reasonable (under 5MB per image)
+- Use landscape orientation for best display
+- Name your files clearly for easy management
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+#### Removing Images
+
+1. Simply delete the unwanted images from the upload folder
+2. The slideshow will automatically update to remove these images
+
+## Troubleshooting
+
+### Common Issues
+
+#### Images Not Showing
+
+- Check if the images are in the correct folder
+- Ensure the image files are not corrupted
+
+#### Slideshow Not Updating
+
+- Refresh the browser page
+- Verify that new images are properly saved in the correct folder
+
+### Need Help?
+
+If you encounter any issues or need assistance, please create a ticket
+https://dpd-ca.atlassian.net/servicedesk/customer/portal/7
+
+## Tips for Best Results
+
+1. **Image Quality**
+
+   - Use high-quality images
+   - Optimize images for web display
+   - Maintain consistent aspect ratios
+
+2. **Organization**
+
+   - Keep your image folder organized
+   - Use clear, descriptive filenames
+   - Regularly clean up unused images
+
+3. **Display Settings**
+   - Adjust your screen brightness for optimal viewing
+   - Ensure the display area is well-lit
+   - Consider the viewing distance when preparing images

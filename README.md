@@ -1,8 +1,8 @@
-# DPDTV - Digital Picture Display TV
+# DPDTV - Delta Police TV
 
 ## Overview
 
-DPDTV is a digital picture display system that allows you to showcase images in a slideshow format. Perfect for photo displays or information screens.
+DPDTV is a system that allows you to showcase images in a slideshow format. Perfect for photo displays or information screens.
 
 ## Quick Start Guide
 
@@ -44,8 +44,10 @@ DPDTV is a digital picture display system that allows you to showcase images in 
 
 #### Removing Images
 
-1. Simply delete the unwanted images from the upload folder
-2. The slideshow will automatically update to remove these images
+1. Head to (https://dpdtv.vercel.app/admin) and login using the provided password
+2. Ensure the "select route" field is set to Internal or External based on where you would like to remove the image from
+3. Deselect the folder(s) that you no longer want displayed.
+4. Click "Save Settings"
 
 ## Troubleshooting
 

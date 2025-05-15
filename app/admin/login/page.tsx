@@ -36,14 +36,8 @@ export default function AdminLogin() {
   return (
     <>
       <Header />
-      <div className="min-h-screen flex items-center justify-center bg-gray-100 pt-16">
+      <div className="min-h-screen flex items-center justify-center pt-16">
         <div className="max-w-md w-full bg-white rounded-lg shadow p-8">
-          <button
-            onClick={() => router.push("/")}
-            className="text-[#006747] hover:text-[#8B5B29] transition-colors mb-4"
-          >
-            ← Back
-          </button>
           <h1 className="text-2xl font-bold text-center mb-6">Admin Login</h1>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

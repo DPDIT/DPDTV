@@ -37,18 +37,10 @@ export default function ImageCarousel() {
       const response = await fetch(`/api/images?folder=${folder}`);
       const data = await response.json();
       setImages(data.images);
-
-      if (emblaApi && data.images.length > 0) {
-        const interval = setInterval(() => {
-          emblaApi.scrollNext();
-        }, config.duration * 1000);
-
-        return () => clearInterval(interval);
-      }
     } catch (error) {
       console.error("Error loading images:", error);
     }
-  }, [folder, emblaApi, config.duration]);
+  }, [folder]);
 
   useEffect(() => {
     const initialize = async () => {
@@ -58,7 +50,17 @@ export default function ImageCarousel() {
       setIsLoading(false);
     };
     initialize();
-  }, []);
+  }, [folder]);
+
+  useEffect(() => {
+    if (!emblaApi || images.length === 0) return;
+
+    const interval = setInterval(() => {
+      emblaApi.scrollNext();
+    }, config.duration * 1000);
+
+    return () => clearInterval(interval);
+  }, [emblaApi, images.length, config.duration]);
 
   useEffect(() => {
     if (!emblaApi) return;

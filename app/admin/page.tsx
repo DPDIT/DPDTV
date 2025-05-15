@@ -141,13 +141,13 @@ export default function AdminPage() {
           </div>
         </div>
       )}
-      <div className="min-h-screen p-8 bg-gray-100 pt-24">
+      <div className="min-h-screen p-8 pt-24">
         <div className="max-w-4xl mx-auto bg-white rounded-lg shadow p-6">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-2xl font-bold">Admin Settings</h1>
             <button
               onClick={handleLogout}
-              className="px-4 py-2 text-[#006747] hover:text-[#8B5B29] transition-colors"
+              className="px-4 py-2 text-white hover:bg-[#8B5B29] transition-colors bg-[#006747] rounded-lg"
             >
               Logout
             </button>
@@ -193,7 +193,7 @@ export default function AdminPage() {
           <div className="flex justify-end space-x-4">
             <button
               onClick={() => router.push("/")}
-              className="px-4 py-2 border rounded hover:bg-gray-100"
+              className="px-4 py-2 border rounded hover:bg-red-500 hover:text-white transition-colors"
             >
               Cancel
             </button>

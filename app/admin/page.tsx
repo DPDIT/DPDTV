@@ -12,8 +12,8 @@ interface Folder {
 }
 
 const routes = [
-  { id: "internal", name: "Internal Images" },
-  { id: "external", name: "External Images" },
+  { id: "Internal", name: "Internal Media" },
+  { id: "External", name: "External Media" },
 ];
 
 export default function AdminPage() {
@@ -172,7 +172,7 @@ export default function AdminPage() {
 
           <div className="mb-6">
             <label className="block text-sm font-medium mb-2">
-              Photo Duration (seconds)
+              Media Slide Duration (seconds)
             </label>
             <input
               type="number"
@@ -184,7 +184,9 @@ export default function AdminPage() {
           </div>
 
           <div className="mb-6">
-            <h2 className="text-lg font-semibold mb-3">Select Folders</h2>
+            <h2 className="text-lg font-semibold mb-3">
+              Select the Folders to Display for {currentRoute} Media
+            </h2>
             <div className="border rounded p-4 max-h-96 overflow-y-auto">
               {folders.map((folder) => renderFolderTree(folder))}
             </div>

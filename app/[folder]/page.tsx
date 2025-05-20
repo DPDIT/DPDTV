@@ -19,6 +19,7 @@ export default function ImageCarousel() {
     duration: 20,
     selectedFolders: [],
   });
+  const [originalDuration, setOriginalDuration] = useState(20);
   const params = useParams();
   const folder = params.folder as string;
 
@@ -27,6 +28,7 @@ export default function ImageCarousel() {
       const response = await fetch(`/api/config?route=${folder}`);
       const data = await response.json();
       setConfig(data);
+      setOriginalDuration(data.duration);
     } catch (error) {
       console.error("Error loading config:", error);
     }
@@ -55,20 +57,50 @@ export default function ImageCarousel() {
   useEffect(() => {
     if (!emblaApi || images.length === 0) return;
 
-    const interval = setInterval(() => {
-      emblaApi.scrollNext();
-    }, config.duration * 1000);
+    let interval: NodeJS.Timeout;
 
-    return () => clearInterval(interval);
+    const startInterval = () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+      console.log("Setting interval with duration:", config.duration);
+      interval = setInterval(() => {
+        emblaApi.scrollNext();
+      }, config.duration * 1000);
+    };
+
+    startInterval();
+
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
   }, [emblaApi, images.length, config.duration]);
 
   useEffect(() => {
     if (!emblaApi) return;
 
     const onSelect = () => {
+      const currentIndex = emblaApi.selectedScrollSnap();
+      const currentImage = images[currentIndex];
+      const isVideo =
+        currentImage && /\.(mp4|webm|mov|avi|mkv)$/i.test(currentImage);
+
+      if (isVideo) {
+        const videoElement = emblaApi
+          .slideNodes()
+          [currentIndex].querySelector("video");
+        if (videoElement) {
+          console.log("Video duration:", videoElement.duration);
+          setConfig((prev) => ({ ...prev, duration: videoElement.duration }));
+        }
+      } else {
+        setConfig((prev) => ({ ...prev, duration: originalDuration }));
+      }
+
       const progress =
-        (emblaApi.selectedScrollSnap() / (emblaApi.slideNodes().length - 1)) *
-        100;
+        (currentIndex / (emblaApi.slideNodes().length - 1)) * 100;
       setProgress(progress);
     };
 
@@ -78,7 +110,7 @@ export default function ImageCarousel() {
     return () => {
       emblaApi.off("select", onSelect);
     };
-  }, [emblaApi]);
+  }, [emblaApi, images, originalDuration]);
 
   return (
     <>
@@ -99,23 +131,58 @@ export default function ImageCarousel() {
         <div className="fixed inset-0 w-full h-full">
           <div className="relative w-full h-full" ref={emblaRef}>
             <div className="flex w-full h-full">
-              {images.map((image, index) => (
-                <div
-                  key={index}
-                  className="flex-[0_0_100%] min-w-0 relative w-full h-full"
-                >
-                  <Image
-                    src={`/images/${folder}/${image}`}
-                    alt={`Slide ${index + 1}`}
-                    fill
-                    className="object-cover bg-black"
-                    priority={index === 0}
-                    quality={100}
-                    loading={index === 0 ? "eager" : "lazy"}
-                    sizes="100vw"
-                  />
-                </div>
-              ))}
+              {images.map((image, index) => {
+                const isVideo = /\.(mp4|webm|mov|avi|mkv)$/i.test(image);
+                return (
+                  <div
+                    key={index}
+                    className="flex-[0_0_100%] min-w-0 relative w-full h-full"
+                  >
+                    {isVideo ? (
+                      <video
+                        src={`/images/${folder}/${image}`}
+                        className="w-full h-full object-cover bg-black"
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        onLoadedMetadata={(e) => {
+                          const video = e.target as HTMLVideoElement;
+                          setConfig((prev) => ({
+                            ...prev,
+                            duration: video.duration,
+                          }));
+                        }}
+                        onEnded={(e) => {
+                          const video = e.target as HTMLVideoElement;
+                          video.pause();
+                          setConfig((prev) => ({
+                            ...prev,
+                            duration: originalDuration,
+                          }));
+                        }}
+                      />
+                    ) : (
+                      <Image
+                        src={`/images/${folder}/${image}`}
+                        alt={`Slide ${index + 1}`}
+                        fill
+                        className="object-cover bg-black"
+                        priority={index === 0}
+                        quality={100}
+                        loading={index === 0 ? "eager" : "lazy"}
+                        sizes="100vw"
+                        onLoad={() => {
+                          setConfig((prev) => ({
+                            ...prev,
+                            duration: originalDuration,
+                          }));
+                        }}
+                      />
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
           <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-800/30">

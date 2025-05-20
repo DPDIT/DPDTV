@@ -36,7 +36,20 @@ function getAllImages(
       }
     } else {
       const ext = path.extname(file).toLowerCase();
-      if ([".jpg", ".jpeg", ".png", ".gif", ".webp"].includes(ext)) {
+      if (
+        [
+          ".jpg",
+          ".jpeg",
+          ".png",
+          ".gif",
+          ".webp",
+          ".mp4",
+          ".webm",
+          ".mov",
+          ".avi",
+          ".mkv",
+        ].includes(ext)
+      ) {
         // Get the relative path from the base folder
         const relativePath = path
           .relative(

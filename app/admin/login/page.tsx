@@ -23,7 +23,6 @@ export default function AdminLogin() {
       });
 
       if (response.ok) {
-        localStorage.setItem("adminPassword", password);
         router.push("/admin");
       } else {
         setError("Invalid password");

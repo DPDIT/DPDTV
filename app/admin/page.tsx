@@ -30,14 +30,8 @@ export default function AdminPage() {
 
   const checkAuth = async () => {
     try {
-      const response = await fetch("/api/auth", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          password: localStorage.getItem("adminPassword"),
-        }),
+      const response = await fetch("/api/auth/check", {
+        method: "GET",
       });
 
       if (!response.ok) {
@@ -51,13 +45,6 @@ export default function AdminPage() {
       router.push("/admin/login");
     }
   };
-
-  useEffect(() => {
-    if (localStorage.getItem("adminPassword")) {
-      fetchFolders();
-      loadConfig();
-    }
-  }, [currentRoute]);
 
   const loadConfig = async () => {
     try {
@@ -107,7 +94,6 @@ export default function AdminPage() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("adminPassword");
     router.push("/admin/login");
   };
 

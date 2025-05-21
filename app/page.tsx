@@ -17,7 +17,7 @@ export default function Home() {
             href="/external"
             className="w-full px-8 py-4 bg-[#FFFFFF] text-[#006747] rounded-lg hover:bg-[#8B5B29] hover:text-[#FFFFFF] transition-colors text-xl text-center"
           >
-            View External Images
+            View External Images{""}
           </Link>
         </div>
       </div>

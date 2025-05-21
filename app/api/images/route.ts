@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
+import { prisma } from "@/lib/prisma";
 
 function getAllImages(
   dir: string,
@@ -73,15 +74,17 @@ async function isFolderSelected(
   folder: string
 ): Promise<{ isSelected: boolean; selectedFolders: string[] }> {
   try {
-    const route = folder.split("/")[0];
-    const configPath = path.join(process.cwd(), "config", `${route}.json`);
+    const route = folder.split("/")[0].toLowerCase();
+    const config = await prisma.config.findFirst({
+      where: {
+        route,
+      },
+    });
 
-    if (!fs.existsSync(configPath)) {
-      console.log(`Config file not found for route: ${route}`);
+    if (!config) {
+      console.log(`Config not found for route: ${route}`);
       return { isSelected: false, selectedFolders: [] };
     }
-
-    const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
 
     // Normalize the folder path to use forward slashes
     const normalizedFolder = folder.replace(/\\/g, "/");
@@ -91,8 +94,10 @@ async function isFolderSelected(
       f.replace(/\\/g, "/")
     );
 
-    // Check if the folder is in the selected folders
-    const isSelected = normalizedSelectedFolders.includes(normalizedFolder);
+    // Check if the folder is in the selected folders (case-insensitive)
+    const isSelected = normalizedSelectedFolders.some(
+      (f: string) => f.toLowerCase() === normalizedFolder.toLowerCase()
+    );
     console.log(`Folder ${normalizedFolder} selection status: ${isSelected}`);
     console.log(`Selected folders: ${normalizedSelectedFolders.join(", ")}`);
 

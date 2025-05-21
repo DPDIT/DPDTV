@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+import { prisma } from "@/lib/prisma";
 
 interface RouteConfig {
   duration: number;
@@ -18,20 +17,24 @@ export async function POST(request: Request) {
   try {
     const { duration, selectedFolders, route } = await request.json();
 
-    const configPath = path.join(process.cwd(), "config");
-    if (!fs.existsSync(configPath)) {
-      fs.mkdirSync(configPath);
-    }
+    const config = await prisma.config.upsert({
+      where: { route },
+      update: {
+        duration,
+        selectedFolders,
+        lastUpdated: new Date(),
+      },
+      create: {
+        route,
+        duration,
+        selectedFolders,
+        lastUpdated: new Date(),
+      },
+    });
 
-    const routeConfigPath = path.join(configPath, `${route}.json`);
-    const config: RouteConfig = {
-      duration,
-      selectedFolders,
-      lastUpdated: new Date().toISOString(),
-    };
+    console.log("Config saved:", config);
 
-    fs.writeFileSync(routeConfigPath, JSON.stringify(config, null, 2));
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, config });
   } catch (error) {
     console.error("Error saving config:", error);
     return NextResponse.json(
@@ -46,14 +49,19 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const route = searchParams.get("route") || "default";
 
-    const configPath = path.join(process.cwd(), "config", `${route}.json`);
+    const config = await prisma.config.findUnique({
+      where: { route },
+    });
 
-    if (!fs.existsSync(configPath)) {
+    if (!config) {
       return NextResponse.json(defaultConfig);
     }
 
-    const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
-    return NextResponse.json(config);
+    return NextResponse.json({
+      duration: config.duration,
+      selectedFolders: config.selectedFolders,
+      lastUpdated: config.lastUpdated.toISOString(),
+    });
   } catch (error) {
     console.error("Error reading config:", error);
     return NextResponse.json(

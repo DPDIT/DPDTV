@@ -12,8 +12,8 @@ interface Folder {
 }
 
 const routes = [
-  { id: "Internal", name: "Internal Media" },
-  { id: "External", name: "External Media" },
+  { id: "internal", name: "Internal Media" },
+  { id: "external", name: "External Media" },
 ];
 
 export default function AdminPage() {

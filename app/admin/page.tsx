@@ -28,6 +28,15 @@ export default function AdminPage() {
     checkAuth();
   }, []);
 
+  // rerender the selected folders when the currentRoute changes
+  useEffect(() => {
+    setSelectedFolders(
+      folders
+        .filter((folder) => folder.path.includes(currentRoute))
+        .map((folder) => folder.path)
+    );
+  }, [currentRoute]);
+
   const checkAuth = async () => {
     try {
       const response = await fetch("/api/auth/check", {

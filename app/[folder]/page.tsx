@@ -25,8 +25,10 @@ export default function ImageCarousel() {
 
   const loadConfig = useCallback(async () => {
     try {
+      console.log("Loading config for folder:", folder);
       const response = await fetch(`/api/config?route=${folder}`);
       const data = await response.json();
+      console.log("Received config data:", data);
       setConfig(data);
       setOriginalDuration(data.duration);
     } catch (error) {
@@ -36,8 +38,10 @@ export default function ImageCarousel() {
 
   const loadImages = useCallback(async () => {
     try {
+      console.log("Loading images for folder:", folder);
       const response = await fetch(`/api/images?folder=${folder}`);
       const data = await response.json();
+      console.log("Received images data:", data);
       setImages(data.images);
     } catch (error) {
       console.error("Error loading images:", error);
@@ -112,6 +116,16 @@ export default function ImageCarousel() {
     };
   }, [emblaApi, images, originalDuration]);
 
+  // Add debug logging for the render condition
+  console.log("Render debug:", {
+    folder,
+    selectedFolders: config.selectedFolders,
+    isSelected: config.selectedFolders.some(
+      (f) => f.replace(/\\/g, "/") === `2025/${folder}`
+    ),
+    imagesLength: images.length,
+  });
+
   return (
     <>
       {isLoading ? (
@@ -121,7 +135,9 @@ export default function ImageCarousel() {
             <p className="mt-4 text-gray-700">Loading...</p>
           </div>
         </div>
-      ) : !config.selectedFolders.includes(folder) || images.length === 0 ? (
+      ) : !config.selectedFolders.some(
+          (f) => f.replace(/\\/g, "/") === `2025/${folder}`
+        ) || images.length === 0 ? (
         <div className="fixed inset-0 flex items-center justify-center bg-black text-white">
           <h1 className="text-2xl">
             This folder is not enabled in the admin settings.

@@ -19,7 +19,7 @@ function getAllImages(
       // Get the relative path of the subfolder
       const relativePath = path
         .relative(
-          path.join(process.cwd(), "public", "images", baseFolder),
+          path.join(process.cwd(), "public", "images", "2025", baseFolder),
           fullPath
         )
         .replace(/\\/g, "/");
@@ -54,7 +54,7 @@ function getAllImages(
         // Get the relative path from the base folder
         const relativePath = path
           .relative(
-            path.join(process.cwd(), "public", "images", baseFolder),
+            path.join(process.cwd(), "public", "images", "2025", baseFolder),
             fullPath
           )
           .replace(/\\/g, "/");
@@ -87,7 +87,7 @@ async function isFolderSelected(
     }
 
     // Normalize the folder path to use forward slashes
-    const normalizedFolder = folder.replace(/\\/g, "/");
+    const normalizedFolder = `2025/${folder}`.replace(/\\/g, "/");
 
     // Normalize all selected folders to use forward slashes
     const normalizedSelectedFolders = config.selectedFolders.map((f: string) =>
@@ -112,7 +112,10 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const folder = searchParams.get("folder");
 
+  console.log("API: Received request for folder:", folder);
+
   if (!folder) {
+    console.log("API: No folder parameter provided");
     return NextResponse.json(
       { error: "Folder parameter is required" },
       { status: 400 }
@@ -122,26 +125,37 @@ export async function GET(request: Request) {
   try {
     // Check if folder is selected in config
     const { isSelected, selectedFolders } = await isFolderSelected(folder);
+    console.log("API: Folder selection status:", {
+      isSelected,
+      selectedFolders,
+    });
+
     if (!isSelected) {
-      console.log(`Folder ${folder} is not selected in config`);
+      console.log(`API: Folder ${folder} is not selected in config`);
       return NextResponse.json({ images: [] });
     }
 
-    const imagesPath = path.join(process.cwd(), "public", "images", folder);
+    const imagesPath = path.join(
+      process.cwd(),
+      "public",
+      "images",
+      "2025",
+      folder
+    );
+    console.log("API: Looking for images in path:", imagesPath);
 
     // Check if directory exists
     if (!fs.existsSync(imagesPath)) {
+      console.log("API: Directory does not exist:", imagesPath);
       return NextResponse.json({ error: "Folder not found" }, { status: 404 });
     }
 
     const images = getAllImages(imagesPath, folder, selectedFolders);
-
-    // Log results for debugging
-    console.log("Found images:", images);
+    console.log("API: Found images:", images);
 
     return NextResponse.json({ images });
   } catch (error) {
-    console.error("Error reading images:", error);
+    console.error("API: Error reading images:", error);
     return NextResponse.json(
       { error: "Failed to read images" },
       { status: 500 }

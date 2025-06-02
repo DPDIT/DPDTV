@@ -10,6 +10,11 @@ interface Config {
   selectedFolders: string[];
 }
 
+// Utility functions
+const normalizePath = (path: string): string => path.replace(/\\/g, "/");
+const isVideoFile = (filename: string): boolean =>
+  /\.(mp4|webm|mov|avi|mkv)$/i.test(filename);
+
 export default function ImageCarousel() {
   const [isLoading, setIsLoading] = useState(true);
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
@@ -56,7 +61,7 @@ export default function ImageCarousel() {
       setIsLoading(false);
     };
     initialize();
-  }, [folder]);
+  }, [folder, loadConfig, loadImages]);
 
   useEffect(() => {
     if (!emblaApi || images.length === 0) return;
@@ -88,8 +93,7 @@ export default function ImageCarousel() {
     const onSelect = () => {
       const currentIndex = emblaApi.selectedScrollSnap();
       const currentImage = images[currentIndex];
-      const isVideo =
-        currentImage && /\.(mp4|webm|mov|avi|mkv)$/i.test(currentImage);
+      const isVideo = currentImage && isVideoFile(currentImage);
 
       if (isVideo) {
         const videoElement = emblaApi
@@ -97,7 +101,10 @@ export default function ImageCarousel() {
           [currentIndex].querySelector("video");
         if (videoElement) {
           console.log("Video duration:", videoElement.duration);
-          setConfig((prev) => ({ ...prev, duration: videoElement.duration }));
+          setConfig((prev) => ({
+            ...prev,
+            duration: videoElement.duration,
+          }));
         }
       } else {
         setConfig((prev) => ({ ...prev, duration: originalDuration }));
@@ -116,99 +123,95 @@ export default function ImageCarousel() {
     };
   }, [emblaApi, images, originalDuration]);
 
-  // Add debug logging for the render condition
-  console.log("Render debug:", {
-    folder,
-    selectedFolders: config.selectedFolders,
-    isSelected: config.selectedFolders.some(
-      (f) => f.replace(/\\/g, "/") === `2025/${folder}`
-    ),
-    imagesLength: images.length,
-  });
+  const isFolderEnabled = config.selectedFolders.some(
+    (f) => normalizePath(f) === normalizePath(`2025/${folder}`)
+  );
+
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white p-8 rounded-lg shadow-lg">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#006747]"></div>
+          <p className="mt-4 text-gray-700">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isFolderEnabled || images.length === 0) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-black text-white">
+        <h1 className="text-2xl">
+          This folder is not enabled in the admin settings.
+        </h1>
+      </div>
+    );
+  }
 
   return (
-    <>
-      {isLoading ? (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-8 rounded-lg shadow-lg">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#006747]"></div>
-            <p className="mt-4 text-gray-700">Loading...</p>
-          </div>
+    <div className="fixed inset-0 w-full h-full">
+      <div className="relative w-full h-full" ref={emblaRef}>
+        <div className="flex w-full h-full">
+          {images.map((image, index) => {
+            const isVideo = isVideoFile(image);
+            return (
+              <div
+                key={index}
+                className="flex-[0_0_100%] min-w-0 relative w-full h-full"
+              >
+                {isVideo ? (
+                  <video
+                    src={`/images/${folder}/${image}`}
+                    className="w-full h-full object-cover bg-black"
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    onLoadedMetadata={(e) => {
+                      const video = e.target as HTMLVideoElement;
+                      setConfig((prev) => ({
+                        ...prev,
+                        duration: video.duration,
+                      }));
+                    }}
+                    onEnded={(e) => {
+                      const video = e.target as HTMLVideoElement;
+                      video.pause();
+                      setConfig((prev) => ({
+                        ...prev,
+                        duration: originalDuration,
+                      }));
+                    }}
+                  />
+                ) : (
+                  <Image
+                    src={`/images/${folder}/${image}`}
+                    alt={`Slide ${index + 1}`}
+                    fill
+                    className="object-cover bg-black"
+                    priority={index === 0}
+                    quality={100}
+                    loading={index === 0 ? "eager" : "lazy"}
+                    sizes="100vw"
+                    onLoad={() => {
+                      setConfig((prev) => ({
+                        ...prev,
+                        duration: originalDuration,
+                      }));
+                    }}
+                  />
+                )}
+              </div>
+            );
+          })}
         </div>
-      ) : !config.selectedFolders.some(
-          (f) => f.replace(/\\/g, "/") === `2025/${folder}`
-        ) || images.length === 0 ? (
-        <div className="fixed inset-0 flex items-center justify-center bg-black text-white">
-          <h1 className="text-2xl">
-            This folder is not enabled in the admin settings.
-          </h1>
-        </div>
-      ) : (
-        <div className="fixed inset-0 w-full h-full">
-          <div className="relative w-full h-full" ref={emblaRef}>
-            <div className="flex w-full h-full">
-              {images.map((image, index) => {
-                const isVideo = /\.(mp4|webm|mov|avi|mkv)$/i.test(image);
-                return (
-                  <div
-                    key={index}
-                    className="flex-[0_0_100%] min-w-0 relative w-full h-full"
-                  >
-                    {isVideo ? (
-                      <video
-                        src={`/images/${folder}/${image}`}
-                        className="w-full h-full object-cover bg-black"
-                        autoPlay
-                        muted
-                        loop
-                        playsInline
-                        onLoadedMetadata={(e) => {
-                          const video = e.target as HTMLVideoElement;
-                          setConfig((prev) => ({
-                            ...prev,
-                            duration: video.duration,
-                          }));
-                        }}
-                        onEnded={(e) => {
-                          const video = e.target as HTMLVideoElement;
-                          video.pause();
-                          setConfig((prev) => ({
-                            ...prev,
-                            duration: originalDuration,
-                          }));
-                        }}
-                      />
-                    ) : (
-                      <Image
-                        src={`/images/${folder}/${image}`}
-                        alt={`Slide ${index + 1}`}
-                        fill
-                        className="object-cover bg-black"
-                        priority={index === 0}
-                        quality={100}
-                        loading={index === 0 ? "eager" : "lazy"}
-                        sizes="100vw"
-                        onLoad={() => {
-                          setConfig((prev) => ({
-                            ...prev,
-                            duration: originalDuration,
-                          }));
-                        }}
-                      />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-          <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-800/30">
-            <div
-              className="h-full bg-white transition-all duration-300 ease-out"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
-      )}
-    </>
+      </div>
+      <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-800/30">
+        <div
+          className="h-full bg-white transition-all duration-300 ease-out"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+    </div>
   );
 }

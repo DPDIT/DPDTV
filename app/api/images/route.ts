@@ -3,11 +3,28 @@ import fs from "fs";
 import path from "path";
 import { prisma } from "@/lib/prisma";
 
-function getAllImages(
+// Constants
+const SUPPORTED_EXTENSIONS = [
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".gif",
+  ".webp",
+  ".mp4",
+  ".webm",
+  ".mov",
+  ".avi",
+  ".mkv",
+] as const;
+
+// Utility functions
+const normalizePath = (path: string): string => path.replace(/\\/g, "/");
+
+const getImagesFromDirectory = (
   dir: string,
   baseFolder: string,
   selectedFolders: string[]
-): string[] {
+): string[] => {
   let results: string[] = [];
   const files = fs.readdirSync(dir);
 
@@ -16,50 +33,30 @@ function getAllImages(
     const stat = fs.statSync(fullPath);
 
     if (stat.isDirectory()) {
-      // Get the relative path of the subfolder
-      const relativePath = path
-        .relative(
+      const relativePath = normalizePath(
+        path.relative(
           path.join(process.cwd(), "public", "images", "2025", baseFolder),
           fullPath
         )
-        .replace(/\\/g, "/");
+      );
 
       const subfolderPath = `${baseFolder}/${relativePath}`;
 
-      // Only process subfolders that are selected
       if (selectedFolders.includes(subfolderPath)) {
-        const subFolderImages = getAllImages(
-          fullPath,
-          baseFolder,
-          selectedFolders
+        results = results.concat(
+          getImagesFromDirectory(fullPath, baseFolder, selectedFolders)
         );
-        results = results.concat(subFolderImages);
       }
     } else {
       const ext = path.extname(file).toLowerCase();
-      if (
-        [
-          ".jpg",
-          ".jpeg",
-          ".png",
-          ".gif",
-          ".webp",
-          ".mp4",
-          ".webm",
-          ".mov",
-          ".avi",
-          ".mkv",
-        ].includes(ext)
-      ) {
-        // Get the relative path from the base folder
-        const relativePath = path
-          .relative(
+      if (SUPPORTED_EXTENSIONS.includes(ext as any)) {
+        const relativePath = normalizePath(
+          path.relative(
             path.join(process.cwd(), "public", "images", "2025", baseFolder),
             fullPath
           )
-          .replace(/\\/g, "/");
+        );
 
-        // Only include the path if it's valid
         if (relativePath && !relativePath.startsWith("..")) {
           results.push(relativePath);
         }
@@ -68,45 +65,32 @@ function getAllImages(
   }
 
   return results;
-}
+};
 
-async function isFolderSelected(
+const checkFolderSelection = async (
   folder: string
-): Promise<{ isSelected: boolean; selectedFolders: string[] }> {
-  try {
-    const route = folder.split("/")[0].toLowerCase();
-    const config = await prisma.config.findFirst({
-      where: {
-        route,
-      },
-    });
+): Promise<{
+  isSelected: boolean;
+  selectedFolders: string[];
+}> => {
+  const route = folder.split("/")[0].toLowerCase();
+  const config = await prisma.config.findFirst({
+    where: { route },
+  });
 
-    if (!config) {
-      console.log(`Config not found for route: ${route}`);
-      return { isSelected: false, selectedFolders: [] };
-    }
-
-    // Normalize the folder path to use forward slashes
-    const normalizedFolder = `2025/${folder}`.replace(/\\/g, "/");
-
-    // Normalize all selected folders to use forward slashes
-    const normalizedSelectedFolders = config.selectedFolders.map((f: string) =>
-      f.replace(/\\/g, "/")
-    );
-
-    // Check if the folder is in the selected folders (case-insensitive)
-    const isSelected = normalizedSelectedFolders.some(
-      (f: string) => f.toLowerCase() === normalizedFolder.toLowerCase()
-    );
-    console.log(`Folder ${normalizedFolder} selection status: ${isSelected}`);
-    console.log(`Selected folders: ${normalizedSelectedFolders.join(", ")}`);
-
-    return { isSelected, selectedFolders: normalizedSelectedFolders };
-  } catch (error) {
-    console.error("Error checking folder selection:", error);
+  if (!config) {
+    console.log(`Config not found for route: ${route}`);
     return { isSelected: false, selectedFolders: [] };
   }
-}
+
+  const normalizedFolder = normalizePath(`2025/${folder}`);
+  const normalizedSelectedFolders = config.selectedFolders.map(normalizePath);
+  const isSelected = normalizedSelectedFolders.some(
+    (f) => f.toLowerCase() === normalizedFolder.toLowerCase()
+  );
+
+  return { isSelected, selectedFolders: normalizedSelectedFolders };
+};
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -123,8 +107,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    // Check if folder is selected in config
-    const { isSelected, selectedFolders } = await isFolderSelected(folder);
+    const { isSelected, selectedFolders } = await checkFolderSelection(folder);
     console.log("API: Folder selection status:", {
       isSelected,
       selectedFolders,
@@ -144,13 +127,12 @@ export async function GET(request: Request) {
     );
     console.log("API: Looking for images in path:", imagesPath);
 
-    // Check if directory exists
     if (!fs.existsSync(imagesPath)) {
       console.log("API: Directory does not exist:", imagesPath);
       return NextResponse.json({ error: "Folder not found" }, { status: 404 });
     }
 
-    const images = getAllImages(imagesPath, folder, selectedFolders);
+    const images = getImagesFromDirectory(imagesPath, folder, selectedFolders);
     console.log("API: Found images:", images);
 
     return NextResponse.json({ images });

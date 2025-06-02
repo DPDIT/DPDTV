@@ -34,27 +34,27 @@ const getImagesFromDirectory = (
 
     if (stat.isDirectory()) {
       const relativePath = normalizePath(
-        path.relative(
-          path.join(process.cwd(), "public", "images", "2025", baseFolder),
-          fullPath
-        )
+        path.relative(path.join(process.cwd(), "public", "images"), fullPath)
       );
 
-      const subfolderPath = `${baseFolder}/${relativePath}`;
+      const isSelected = selectedFolders.some((folder) => {
+        const normalizedFolder = normalizePath(folder);
+        return normalizedFolder === relativePath;
+      });
 
-      if (selectedFolders.includes(subfolderPath)) {
-        results = results.concat(
-          getImagesFromDirectory(fullPath, baseFolder, selectedFolders)
+      if (isSelected) {
+        const subFolderImages = getImagesFromDirectory(
+          fullPath,
+          baseFolder,
+          selectedFolders
         );
+        results = results.concat(subFolderImages);
       }
     } else {
       const ext = path.extname(file).toLowerCase();
       if (SUPPORTED_EXTENSIONS.includes(ext as any)) {
         const relativePath = normalizePath(
-          path.relative(
-            path.join(process.cwd(), "public", "images", "2025", baseFolder),
-            fullPath
-          )
+          path.relative(path.join(process.cwd(), "public", "images"), fullPath)
         );
 
         if (relativePath && !relativePath.startsWith("..")) {
@@ -107,13 +107,28 @@ export async function GET(request: Request) {
   }
 
   try {
-    const { isSelected, selectedFolders } = await checkFolderSelection(folder);
+    const route = folder.split("/")[0].toLowerCase();
+    const config = await prisma.config.findFirst({
+      where: { route },
+    });
+
+    if (!config) {
+      console.log(`API: Config not found for route: ${route}`);
+      return NextResponse.json({ images: [] });
+    }
+
+    const selectedFolders = config.selectedFolders.map(normalizePath);
+    console.log("API: Normalized selected folders:", selectedFolders);
+
+    const folderIsSelected = selectedFolders.some(
+      (f) => f.toLowerCase() === normalizePath(`2025/${folder}`).toLowerCase()
+    );
     console.log("API: Folder selection status:", {
-      isSelected,
+      isSelected: folderIsSelected,
       selectedFolders,
     });
 
-    if (!isSelected) {
+    if (!folderIsSelected) {
       console.log(`API: Folder ${folder} is not selected in config`);
       return NextResponse.json({ images: [] });
     }

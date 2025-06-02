@@ -161,7 +161,7 @@ export default function ImageCarousel() {
               >
                 {isVideo ? (
                   <video
-                    src={`/images/${folder}/${image}`}
+                    src={`/images/${image}`}
                     className="w-full h-full object-cover bg-black"
                     autoPlay
                     muted
@@ -185,7 +185,7 @@ export default function ImageCarousel() {
                   />
                 ) : (
                   <Image
-                    src={`/images/${folder}/${image}`}
+                    src={`/images/${image}`}
                     alt={`Slide ${index + 1}`}
                     fill
                     className="object-cover bg-black"

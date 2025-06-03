@@ -139,7 +139,8 @@ export default function ImageCarousel() {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-black text-white">
         <h1 className="text-2xl">
-          This folder is not enabled in the admin settings.{""}
+          This folder is not enabled in the admin settings. Contact
+          Administrator.
         </h1>
       </div>
     );

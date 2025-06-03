@@ -48,16 +48,12 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const route = searchParams.get("route") || "default";
-    console.log("Config API: Received request for route:", route);
 
     const config = await prisma.config.findUnique({
       where: { route },
     });
 
-    console.log("Config API: Found config:", config);
-
     if (!config) {
-      console.log("Config API: No config found, returning default");
       return NextResponse.json(defaultConfig);
     }
 
@@ -66,8 +62,6 @@ export async function GET(request: Request) {
       selectedFolders: config.selectedFolders,
       lastUpdated: config.lastUpdated.toISOString(),
     };
-    console.log("Config API: Returning response:", response);
-
     return NextResponse.json(response);
   } catch (error) {
     console.error("Config API: Error reading config:", error);

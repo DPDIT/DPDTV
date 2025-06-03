@@ -27,13 +27,12 @@ export default function ImageCarousel() {
   const [originalDuration, setOriginalDuration] = useState(20);
   const params = useParams();
   const folder = params.folder as string;
+  const selectedYear = new Date().getFullYear();
 
   const loadConfig = useCallback(async () => {
     try {
-      console.log("Loading config for folder:", folder);
       const response = await fetch(`/api/config?route=${folder}`);
       const data = await response.json();
-      console.log("Received config data:", data);
       setConfig(data);
       setOriginalDuration(data.duration);
     } catch (error) {
@@ -43,10 +42,10 @@ export default function ImageCarousel() {
 
   const loadImages = useCallback(async () => {
     try {
-      console.log("Loading images for folder:", folder);
-      const response = await fetch(`/api/images?folder=${folder}`);
+      const response = await fetch(
+        `/api/images?folder=${folder}&year=${selectedYear}`
+      );
       const data = await response.json();
-      console.log("Received images data:", data);
       setImages(data.images);
     } catch (error) {
       console.error("Error loading images:", error);
@@ -72,7 +71,6 @@ export default function ImageCarousel() {
       if (interval) {
         clearInterval(interval);
       }
-      console.log("Setting interval with duration:", config.duration);
       interval = setInterval(() => {
         emblaApi.scrollNext();
       }, config.duration * 1000);
@@ -100,7 +98,6 @@ export default function ImageCarousel() {
           .slideNodes()
           [currentIndex].querySelector("video");
         if (videoElement) {
-          console.log("Video duration:", videoElement.duration);
           setConfig((prev) => ({
             ...prev,
             duration: videoElement.duration,

@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 import { prisma } from "@/lib/prisma";
-
 // Constants
 const SUPPORTED_EXTENSIONS = [
   ".jpg",
@@ -67,39 +66,12 @@ const getImagesFromDirectory = (
   return results;
 };
 
-const checkFolderSelection = async (
-  folder: string
-): Promise<{
-  isSelected: boolean;
-  selectedFolders: string[];
-}> => {
-  const route = folder.split("/")[0].toLowerCase();
-  const config = await prisma.config.findFirst({
-    where: { route },
-  });
-
-  if (!config) {
-    console.log(`Config not found for route: ${route}`);
-    return { isSelected: false, selectedFolders: [] };
-  }
-
-  const normalizedFolder = normalizePath(`2025/${folder}`);
-  const normalizedSelectedFolders = config.selectedFolders.map(normalizePath);
-  const isSelected = normalizedSelectedFolders.some(
-    (f) => f.toLowerCase() === normalizedFolder.toLowerCase()
-  );
-
-  return { isSelected, selectedFolders: normalizedSelectedFolders };
-};
-
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const folder = searchParams.get("folder");
-
-  console.log("API: Received request for folder:", folder);
+  const selectedYear = searchParams.get("year");
 
   if (!folder) {
-    console.log("API: No folder parameter provided");
     return NextResponse.json(
       { error: "Folder parameter is required" },
       { status: 400 }
@@ -113,15 +85,15 @@ export async function GET(request: Request) {
     });
 
     if (!config) {
-      console.log(`API: Config not found for route: ${route}`);
       return NextResponse.json({ images: [] });
     }
 
     const selectedFolders = config.selectedFolders.map(normalizePath);
-    console.log("API: Normalized selected folders:", selectedFolders);
 
     const folderIsSelected = selectedFolders.some(
-      (f) => f.toLowerCase() === normalizePath(`2025/${folder}`).toLowerCase()
+      (f) =>
+        f.toLowerCase() ===
+        normalizePath(`${selectedYear}/${folder}`).toLowerCase()
     );
     console.log("API: Folder selection status:", {
       isSelected: folderIsSelected,
@@ -129,7 +101,6 @@ export async function GET(request: Request) {
     });
 
     if (!folderIsSelected) {
-      console.log(`API: Folder ${folder} is not selected in config`);
       return NextResponse.json({ images: [] });
     }
 
@@ -137,18 +108,15 @@ export async function GET(request: Request) {
       process.cwd(),
       "public",
       "images",
-      "2025",
+      selectedYear!,
       folder
     );
-    console.log("API: Looking for images in path:", imagesPath);
 
     if (!fs.existsSync(imagesPath)) {
-      console.log("API: Directory does not exist:", imagesPath);
       return NextResponse.json({ error: "Folder not found" }, { status: 404 });
     }
 
     const images = getImagesFromDirectory(imagesPath, folder, selectedFolders);
-    console.log("API: Found images:", images);
 
     return NextResponse.json({ images });
   } catch (error) {

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Header from "@/app/components/Header";
+import { useYear } from "@/context/YearContext";
 
 interface Folder {
   name: string;
@@ -23,19 +24,7 @@ export default function AdminPage() {
   const [currentRoute, setCurrentRoute] = useState(routes[0].id);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  // rerender the selected folders when the currentRoute changes
-  useEffect(() => {
-    setSelectedFolders(
-      folders
-        .filter((folder) => folder.path.includes(currentRoute))
-        .map((folder) => folder.path)
-    );
-  }, [currentRoute]);
+  const { selectedYear, setSelectedYear } = useYear();
 
   const checkAuth = async () => {
     try {
@@ -55,6 +44,27 @@ export default function AdminPage() {
     }
   };
 
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  // rerender the selected folders when the currentRoute changes
+  useEffect(() => {
+    setSelectedFolders(
+      folders
+        .filter((folder) => folder.path.includes(currentRoute))
+        .map((folder) => folder.path)
+    );
+  }, [currentRoute]);
+
+  // Refetch folders and config when currentRoute or selectedYear changes
+  useEffect(() => {
+    if (!loading) {
+      fetchFolders();
+      loadConfig();
+    }
+  }, [currentRoute, selectedYear]);
+
   const loadConfig = async () => {
     try {
       const response = await fetch(`/api/config?route=${currentRoute}`);
@@ -68,11 +78,14 @@ export default function AdminPage() {
 
   const fetchFolders = async () => {
     try {
-      const response = await fetch("/api/folders");
+      const response = await fetch(
+        `/api/folders?year=${selectedYear}&route=${currentRoute}`
+      );
       const data = await response.json();
       setFolders(data.folders);
     } catch (error) {
       console.error("Error fetching folders:", error);
+      setFolders([]); // fallback to prevent undefined
     }
   };
 
@@ -106,6 +119,7 @@ export default function AdminPage() {
     router.push("/admin/login");
   };
 
+  // Render ONLY the folders that are in the selected route && selected year
   const renderFolderTree = (folder: Folder, level = 0) => {
     return (
       <div key={folder.path} style={{ marginLeft: `${level * 20}px` }}>
@@ -114,7 +128,6 @@ export default function AdminPage() {
             type="checkbox"
             checked={selectedFolders.includes(folder.path)}
             onChange={() => handleFolderToggle(folder.path)}
-            className="form-checkbox"
           />
           <span>{folder.name}</span>
         </label>
@@ -162,6 +175,25 @@ export default function AdminPage() {
                   {route.name}
                 </option>
               ))}
+            </select>
+          </div>
+
+          {/* Select Year */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium mb-2">
+              Select Year
+            </label>
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              className="w-full px-3 py-2 border rounded"
+            >
+              <option value="2025">2025</option>
+              <option value="2026">2026</option>
+              <option value="2027">2027</option>
+              <option value="2028">2028</option>
+              <option value="2029">2029</option>
+              <option value="2030">2030</option>
             </select>
           </div>
 

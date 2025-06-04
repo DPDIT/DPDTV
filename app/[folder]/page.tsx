@@ -67,7 +67,10 @@ export default function ImageCarousel() {
 
   useEffect(() => {
     if (config.selectedFolders.length > 0) {
-      loadImages();
+      setIsLoading(true);
+      loadImages().finally(() => {
+        setIsLoading(false);
+      });
     }
   }, [config.selectedFolders, loadImages]);
 
@@ -84,7 +87,6 @@ export default function ImageCarousel() {
         emblaApi.scrollNext();
       }, config.duration * 1000);
     };
-
     startInterval();
 
     return () => {

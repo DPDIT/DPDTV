@@ -26,11 +26,12 @@ export default function AdminPage() {
       const response = await fetch("/api/auth/check", { method: "GET" });
       if (!response.ok) {
         router.push("/admin/login");
+        return;
       }
-
       setLoading(false);
     } catch {
       router.push("/admin/login");
+      return;
     }
   };
 

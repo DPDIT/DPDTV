@@ -1,79 +1,81 @@
 import { NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+import { list } from "@vercel/blob";
 
-function getFolderStructure(
-  dir: string,
-  basePath: string,
-  year: string,
-  route: string
-): any[] {
-  const items = fs.readdirSync(dir);
-  const folders: any[] = [];
+interface Folder {
+  name: string;
+  path: string;
+  subfolders?: Record<string, Folder>;
+}
 
-  for (const item of items) {
-    const fullPath = path.join(dir, item);
-    const stat = fs.statSync(fullPath);
+function buildTree(paths: string[]): Folder[] {
+  const root: Record<string, Folder> = {};
 
-    if (stat.isDirectory()) {
-      const relativePath = path
-        .relative(basePath, fullPath)
-        .replace(/\\/g, "/");
-      const lowerRel = relativePath.toLowerCase();
-      const lowerYear = year.toLowerCase();
-      const lowerRoute = route.toLowerCase();
+  for (const path of paths) {
+    const parts = path.split("/");
+    let current = root;
 
-      // Only recurse if the path contains the year or route
-      if (lowerRel.includes(lowerYear) || lowerRel.includes(lowerRoute)) {
-        // Recursively get subfolders (filtered)
-        const subfolders = getFolderStructure(fullPath, basePath, year, route);
+    for (let i = 0; i < parts.length; i++) {
+      const segment = parts[i];
+      const fullPath = parts.slice(0, i + 1).join("/");
 
-        // Check if current folder matches both filters
-        const matchesFilter =
-          lowerRel.includes(lowerYear) && lowerRel.includes(lowerRoute);
-
-        if (matchesFilter || subfolders.length > 0) {
-          folders.push({
-            name: item,
-            path: relativePath,
-            subfolders,
-          });
-        }
+      if (!current[segment]) {
+        current[segment] = {
+          name: segment,
+          path: fullPath,
+          subfolders: {},
+        };
       }
+
+      if (i === parts.length - 1) break;
+
+      current = current[segment].subfolders!;
     }
   }
 
-  return folders;
+  function toArray(obj: Record<string, Folder>): Folder[] {
+    return Object.values(obj).map((folder) => ({
+      name: folder.name,
+      path: folder.path,
+      subfolders: folder.subfolders ? toArray(folder.subfolders) : {},
+    }));
+  }
+
+  return toArray(root);
 }
 
-export async function GET(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const year = searchParams.get("year");
-    const route = searchParams.get("route");
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const route = searchParams.get("route");
+  const year = searchParams.get("year");
 
-    if (!year || !route) {
-      return NextResponse.json(
-        { error: "Missing 'year' or 'route' query parameters" },
-        { status: 400 }
-      );
-    }
-
-    const imagesPath = path.join(process.cwd(), "public", "images");
-
-    if (!fs.existsSync(imagesPath)) {
-      return NextResponse.json(
-        { error: "Images directory not found" },
-        { status: 404 }
-      );
-    }
-
-    const folders = getFolderStructure(imagesPath, imagesPath, year, route);
-    return NextResponse.json({ folders });
-  } catch (error) {
-    console.error("Error reading folders:", error);
+  if (!route || !year) {
     return NextResponse.json(
-      { error: "Failed to read folders" },
+      { error: "Missing route or year" },
+      { status: 400 }
+    );
+  }
+
+  try {
+    const prefix = `${year}/${route}/`;
+    const blobs = await list({ prefix });
+
+    const folderPaths = new Set<string>();
+
+    for (const blob of blobs.blobs) {
+      const parts = blob.pathname.split("/");
+      for (let i = 1; i < parts.length - 1; i++) {
+        const subpath = parts.slice(0, i + 1).join("/");
+        folderPaths.add(subpath);
+      }
+    }
+
+    const folders = buildTree([...folderPaths]);
+
+    return NextResponse.json({ folders });
+  } catch (err) {
+    console.error("Error listing blobs:", err);
+    return NextResponse.json(
+      { error: "Failed to load folders" },
       { status: 500 }
     );
   }

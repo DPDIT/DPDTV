@@ -45,3 +45,4 @@ Sync.js
 /backup
 
 .vercel
+.env*.local

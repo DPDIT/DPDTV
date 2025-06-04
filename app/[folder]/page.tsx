@@ -10,57 +10,66 @@ interface Config {
   selectedFolders: string[];
 }
 
-// Utility functions
-const normalizePath = (path: string): string => path.replace(/\\/g, "/");
-const isVideoFile = (filename: string): boolean =>
-  /\.(mp4|webm|mov|avi|mkv)$/i.test(filename);
+interface ImageData {
+  id: string;
+  url: string;
+  name: string;
+}
 
 export default function ImageCarousel() {
   const [isLoading, setIsLoading] = useState(true);
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
-  const [images, setImages] = useState<string[]>([]);
+  const [images, setImages] = useState<ImageData[]>([]);
   const [progress, setProgress] = useState(0);
   const [config, setConfig] = useState<Config>({
     duration: 20,
     selectedFolders: [],
   });
-  const [originalDuration, setOriginalDuration] = useState(20);
   const params = useParams();
-  const folder = params.folder as string;
-  const selectedYear = new Date().getFullYear();
+  const route = params.folder as string;
 
   const loadConfig = useCallback(async () => {
     try {
-      const response = await fetch(`/api/config?route=${folder}`);
+      const response = await fetch(`/api/config?route=${route}`);
       const data = await response.json();
       setConfig(data);
-      setOriginalDuration(data.duration);
     } catch (error) {
       console.error("Error loading config:", error);
     }
-  }, [folder]);
+  }, [route]);
 
   const loadImages = useCallback(async () => {
+    if (!config.selectedFolders.length) return;
+
     try {
-      const response = await fetch(
-        `/api/images?folder=${folder}&year=${selectedYear}`
+      const imagePromises = config.selectedFolders.map((folderPath) =>
+        fetch(`/api/images?folder=${encodeURIComponent(folderPath)}`)
+          .then((res) => res.json())
+          .then((data) => data.images || [])
       );
-      const data = await response.json();
-      setImages(data.images);
+
+      const imageArrays = await Promise.all(imagePromises);
+      const allImages = imageArrays.flat();
+      setImages(allImages);
     } catch (error) {
       console.error("Error loading images:", error);
     }
-  }, [folder]);
+  }, [config.selectedFolders]);
 
   useEffect(() => {
     const initialize = async () => {
       setIsLoading(true);
       await loadConfig();
-      await loadImages();
       setIsLoading(false);
     };
     initialize();
-  }, [folder, loadConfig, loadImages]);
+  }, [loadConfig]);
+
+  useEffect(() => {
+    if (config.selectedFolders.length > 0) {
+      loadImages();
+    }
+  }, [config.selectedFolders, loadImages]);
 
   useEffect(() => {
     if (!emblaApi || images.length === 0) return;
@@ -90,23 +99,6 @@ export default function ImageCarousel() {
 
     const onSelect = () => {
       const currentIndex = emblaApi.selectedScrollSnap();
-      const currentImage = images[currentIndex];
-      const isVideo = currentImage && isVideoFile(currentImage);
-
-      if (isVideo) {
-        const videoElement = emblaApi
-          .slideNodes()
-          [currentIndex].querySelector("video");
-        if (videoElement) {
-          setConfig((prev) => ({
-            ...prev,
-            duration: videoElement.duration,
-          }));
-        }
-      } else {
-        setConfig((prev) => ({ ...prev, duration: originalDuration }));
-      }
-
       const progress =
         (currentIndex / (emblaApi.slideNodes().length - 1)) * 100;
       setProgress(progress);
@@ -118,11 +110,7 @@ export default function ImageCarousel() {
     return () => {
       emblaApi.off("select", onSelect);
     };
-  }, [emblaApi, images, originalDuration]);
-
-  const isFolderEnabled = config.selectedFolders.some(
-    (f) => normalizePath(f) === normalizePath(`2025/${folder}`)
-  );
+  }, [emblaApi, images]);
 
   if (isLoading) {
     return (
@@ -135,12 +123,11 @@ export default function ImageCarousel() {
     );
   }
 
-  if (!isFolderEnabled || images.length === 0) {
+  if (images.length === 0) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-black text-white">
         <h1 className="text-2xl">
-          This folder is not enabled in the admin settings. Contact
-          Administrator.
+          No images available. Contact Administrator.
         </h1>
       </div>
     );
@@ -150,58 +137,23 @@ export default function ImageCarousel() {
     <div className="fixed inset-0 w-full h-full">
       <div className="relative w-full h-full" ref={emblaRef}>
         <div className="flex w-full h-full">
-          {images.map((image, index) => {
-            const isVideo = isVideoFile(image);
-            return (
-              <div
-                key={index}
-                className="flex-[0_0_100%] min-w-0 relative w-full h-full"
-              >
-                {isVideo ? (
-                  <video
-                    src={`/images/${image}`}
-                    className="w-full h-full object-cover bg-black"
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    onLoadedMetadata={(e) => {
-                      const video = e.target as HTMLVideoElement;
-                      setConfig((prev) => ({
-                        ...prev,
-                        duration: video.duration,
-                      }));
-                    }}
-                    onEnded={(e) => {
-                      const video = e.target as HTMLVideoElement;
-                      video.pause();
-                      setConfig((prev) => ({
-                        ...prev,
-                        duration: originalDuration,
-                      }));
-                    }}
-                  />
-                ) : (
-                  <Image
-                    src={`/images/${image}`}
-                    alt={`Slide ${index + 1}`}
-                    fill
-                    className="object-cover bg-black"
-                    priority={index === 0}
-                    quality={100}
-                    loading={index === 0 ? "eager" : "lazy"}
-                    sizes="100vw"
-                    onLoad={() => {
-                      setConfig((prev) => ({
-                        ...prev,
-                        duration: originalDuration,
-                      }));
-                    }}
-                  />
-                )}
-              </div>
-            );
-          })}
+          {images.map((image, index) => (
+            <div
+              key={image.id}
+              className="flex-[0_0_100%] min-w-0 relative w-full h-full"
+            >
+              <Image
+                src={image.url}
+                alt={image.name}
+                fill
+                className="object-cover bg-black"
+                priority={index === 0}
+                quality={100}
+                loading={index === 0 ? "eager" : "lazy"}
+                sizes="100vw"
+              />
+            </div>
+          ))}
         </div>
       </div>
       <div className="absolute bottom-0 left-0 w-full h-1 bg-gray-800/30">

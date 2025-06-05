@@ -1,8 +1,6 @@
 import { put } from "@vercel/blob";
 import { NextRequest, NextResponse } from "next/server";
 
-export const runtime = "edge"; // Make sure this runs on edge runtime
-
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();

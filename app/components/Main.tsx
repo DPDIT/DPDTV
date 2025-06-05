@@ -18,6 +18,7 @@ export default function Main({ selectedFolder, currentRoute }: MainProps) {
   const [images, setImages] = useState<Image[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deletingImage, setDeletingImage] = useState<string | null>(null);
 
   const fetchImages = async () => {
     if (!selectedFolder) {
@@ -39,6 +40,29 @@ export default function Main({ selectedFolder, currentRoute }: MainProps) {
       setError(err instanceof Error ? err.message : "Error loading images");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (imageUrl: string) => {
+    if (!confirm("Are you sure you want to delete this image?")) return;
+
+    setDeletingImage(imageUrl);
+    try {
+      const res = await fetch(
+        `/api/images?url=${encodeURIComponent(imageUrl)}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!res.ok) throw new Error("Failed to delete image");
+
+      // Remove the image from the state
+      setImages(images.filter((img) => img.url !== imageUrl));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error deleting image");
+    } finally {
+      setDeletingImage(null);
     }
   };
 
@@ -88,6 +112,29 @@ export default function Main({ selectedFolder, currentRoute }: MainProps) {
                 alt={name}
                 className="w-full h-full object-cover p-2"
               />
+              <button
+                onClick={() => handleDelete(url)}
+                disabled={deletingImage === url}
+                className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Delete image"
+              >
+                {deletingImage === url ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                )}
+              </button>
             </div>
             <div className="p-1 text-sm text-center truncate bg-white">
               {name}

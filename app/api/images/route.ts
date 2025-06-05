@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { list } from "@vercel/blob";
+import { list, del } from "@vercel/blob";
 
 export const runtime = "edge";
 
@@ -33,6 +33,35 @@ export async function GET(req: Request) {
     console.error("Failed to list blobs:", err);
     return NextResponse.json(
       { error: "Failed to fetch images" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const imageUrl = searchParams.get("url");
+
+  if (!imageUrl) {
+    return NextResponse.json(
+      { error: "Missing image URL parameter" },
+      { status: 400 }
+    );
+  }
+
+  try {
+    // Use the full URL as the path
+    console.log("Attempting to delete URL:", imageUrl);
+
+    // Delete the blob using the full URL
+    await del([imageUrl]);
+    console.log("Successfully deleted URL:", imageUrl);
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error("Failed to delete image:", err);
+    return NextResponse.json(
+      { error: "Failed to delete image" },
       { status: 500 }
     );
   }

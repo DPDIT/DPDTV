@@ -13,6 +13,7 @@ interface SidebarProps {
   setCurrentRoute: (route: string) => void;
   selectedYear: string;
   setSelectedYear: (year: string) => void;
+  selectedFolder: string;
 }
 
 export default function Sidebar({
@@ -20,6 +21,7 @@ export default function Sidebar({
   setCurrentRoute,
   selectedYear,
   setSelectedYear,
+  selectedFolder,
 }: SidebarProps) {
   const [folders, setFolders] = useState<Folder[]>([]);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -39,6 +41,18 @@ export default function Sidebar({
         );
         const data = await res.json();
         setFolders(data.folders || []);
+        // Expand all folders by default
+        const allPaths = new Set<string>();
+        const addPaths = (folders: Folder[]) => {
+          folders.forEach((folder) => {
+            if (folder.subfolders?.length) {
+              allPaths.add(folder.path);
+              addPaths(folder.subfolders);
+            }
+          });
+        };
+        addPaths(data.folders || []);
+        setExpanded(allPaths);
       } catch (err) {
         console.error("Failed to fetch folders", err);
       }
@@ -109,7 +123,11 @@ export default function Sidebar({
             onFolderClick?.(folder.path);
           }
         }}
-        className="cursor-pointer p-1 hover:bg-gray-100 rounded flex items-center justify-between group"
+        className={`cursor-pointer p-1 hover:bg-gray-100 rounded flex items-center justify-between group ${
+          selectedFolder === folder.path
+            ? "bg-[#006747] text-white hover:bg-[#006747]"
+            : ""
+        }`}
         style={{ paddingLeft: `${depth * 16}px` }}
       >
         <div className="flex items-center">
@@ -129,8 +147,8 @@ export default function Sidebar({
             enabledFolders.has(folder.path)
               ? "bg-green-500 hover:bg-green-600"
               : "bg-red-500 hover:bg-red-600"
-          } text-white shadow opacity-0 group-hover:opacity-100 ${
-            folder.subfolders?.length ? "opacity-50 cursor-not-allowed" : ""
+          } text-white shadow ${
+            folder.subfolders?.length ? "opacity-0 cursor-not-allowed" : ""
           }`}
           title={
             folder.subfolders?.length

@@ -9,6 +9,20 @@ interface Folder {
 
 function buildTree(paths: string[]): Folder[] {
   const root: Record<string, Folder> = {};
+  const monthOrder = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
 
   for (const path of paths) {
     const parts = path.split("/");
@@ -33,11 +47,29 @@ function buildTree(paths: string[]): Folder[] {
   }
 
   function toArray(obj: Record<string, Folder>): Folder[] {
-    return Object.values(obj).map((folder) => ({
+    const folders = Object.values(obj).map((folder) => ({
       name: folder.name,
       path: folder.path,
       subfolders: folder.subfolders ? toArray(folder.subfolders) : {},
     }));
+
+    // Sort folders by month if they are month names
+    return folders.sort((a, b) => {
+      const aMonth = a.name;
+      const bMonth = b.name;
+      const aIndex = monthOrder.indexOf(aMonth);
+      const bIndex = monthOrder.indexOf(bMonth);
+
+      // If both are months, sort by month order
+      if (aIndex !== -1 && bIndex !== -1) {
+        return aIndex - bIndex;
+      }
+      // If only one is a month, put months first
+      if (aIndex !== -1) return -1;
+      if (bIndex !== -1) return 1;
+      // If neither is a month, sort alphabetically
+      return a.name.localeCompare(b.name);
+    });
   }
 
   return toArray(root);

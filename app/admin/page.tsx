@@ -7,19 +7,28 @@ import Main from "../components/Main";
 
 export default function AdminPage() {
   const year = new Date().getFullYear().toString();
+  const months = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+  const month = months[new Date().getMonth()];
   const [selectedYear, setSelectedYear] = useState<string>(year);
   const [currentRoute, setCurrentRoute] = useState<string>("internal");
   const [selectedFolder, setSelectedFolder] = useState<string>(
-    `${year}/internal`
+    `${year}/internal/${month}`
   );
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-
-  // Update selectedFolder when route or year changes
-  useEffect(() => {
-    setSelectedFolder(`${selectedYear}/${currentRoute}`);
-  }, [selectedYear, currentRoute]);
-
   // Auth check and initial load
   const checkAuth = async () => {
     try {
@@ -44,34 +53,6 @@ export default function AdminPage() {
     router.push("/admin/login");
   };
 
-  const onUpload = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const form = e.currentTarget;
-    const fileInput = form.elements.namedItem("file") as HTMLInputElement;
-
-    if (!fileInput?.files?.length) {
-      alert("Please select a file to upload");
-      return;
-    }
-
-    const file = fileInput.files[0];
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("path", `2025/${currentRoute}/${file.name}`);
-
-    const res = await fetch("/api/upload", {
-      method: "POST",
-      body: formData,
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      alert(`Uploaded successfully: ${data.url}`);
-    } else {
-      alert("Upload failed");
-    }
-  };
-
   return (
     <>
       {loading && (
@@ -86,9 +67,15 @@ export default function AdminPage() {
       <div className="flex h-screen">
         <Sidebar
           onFolderClick={(path) => setSelectedFolder(path)}
-          setCurrentRoute={setCurrentRoute}
+          setCurrentRoute={(route) => {
+            setCurrentRoute(route);
+            // Update selectedFolder to match new route
+            const currentMonth = selectedFolder.split("/").pop() || "";
+            setSelectedFolder(`${selectedYear}/${route}/${currentMonth}`);
+          }}
           selectedYear={selectedYear}
           setSelectedYear={setSelectedYear}
+          selectedFolder={selectedFolder}
         />
         <div className="flex-1 overflow-auto">
           <Main selectedFolder={selectedFolder} currentRoute={currentRoute} />

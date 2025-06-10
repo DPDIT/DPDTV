@@ -5,7 +5,7 @@ DPDTV is a modern web-based system for managing and displaying media content acr
 ## 🌟 Features
 
 - Automatic slideshow functionality
-- Separate internal and external display options
+- Separate internal and public display options
 - Admin panel for content management
 - Real-time content updates
 - Secure authentication system
@@ -17,7 +17,7 @@ DPDTV is a modern web-based system for managing and displaying media content acr
 ### Viewing the Slideshow
 
 1. Open the application in your web browser: [https://dpdtv.vercel.app](https://dpdtv.vercel.app)
-2. Select either Internal or External based on the TV location
+2. Select either Internal or Public based on the TV location
 3. The slideshow will automatically start
 
 ## 👨‍💼 Administrator Guide
@@ -32,7 +32,7 @@ DPDTV is a modern web-based system for managing and displaying media content acr
 1. **Select Year and Route**
 
    - Choose the year from the dropdown
-   - Select either Internal or External route
+   - Select either Internal or Public route
 
 2. **Uploading Content**
 

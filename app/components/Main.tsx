@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Upload from "./Upload";
+import Notice from "./Notice";
 
 interface Image {
   id: string;
@@ -85,9 +86,7 @@ export default function Main({ selectedFolder, currentRoute }: MainProps) {
   if (images.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full">
-        <h1 className="text-4xl text-white py-2">
-          No images found in {selectedFolder}.
-        </h1>
+        <Notice selectedFolder={selectedFolder} currentRoute={currentRoute} />
         <Upload
           selectedFolder={selectedFolder}
           onUploadComplete={fetchImages}
@@ -100,6 +99,7 @@ export default function Main({ selectedFolder, currentRoute }: MainProps) {
     <div className="p-4">
       <h1 className="text-2xl text-white mb-2">{selectedFolder}</h1>
       <Upload selectedFolder={selectedFolder} onUploadComplete={fetchImages} />
+      {currentRoute == "public" && <Notice />}
       <div className="grid grid-cols-3 gap-4 overflow-auto max-h-screen">
         {images.map(({ id, url, name }) => (
           <div

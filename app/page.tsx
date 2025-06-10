@@ -14,10 +14,10 @@ export default function Home() {
             View Internal Images
           </Link>
           <Link
-            href="/external"
+            href="/public"
             className="w-full px-8 py-4 bg-[#FFFFFF] text-[#006747] rounded-lg hover:bg-[#8B5B29] hover:text-[#FFFFFF] transition-colors text-xl text-center"
           >
-            View External Images{""}
+            View Public Images{""}
           </Link>
         </div>
       </div>

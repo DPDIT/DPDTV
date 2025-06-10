@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 
 interface Folder {
   name: string;
@@ -140,26 +142,27 @@ export default function Sidebar({
           )}
           <span>{folder.name}</span>
         </div>
-        <button
-          onClick={(e) => toggleFolder(folder.path, e)}
-          disabled={!!folder.subfolders?.length}
-          className={`px-2 py-1 rounded text-sm transition-colors ${
-            enabledFolders.has(folder.path)
-              ? "bg-green-500 hover:bg-green-600"
-              : "bg-red-500 hover:bg-red-600"
-          } text-white shadow ${
-            folder.subfolders?.length ? "opacity-0 cursor-not-allowed" : ""
-          }`}
-          title={
-            folder.subfolders?.length
-              ? "Cannot toggle folders with subfolders"
-              : enabledFolders.has(folder.path)
-              ? "Disable folder"
-              : "Enable folder"
-          }
-        >
-          {enabledFolders.has(folder.path) ? "✓" : "×"}
-        </button>
+        {!folder.subfolders?.length && (
+          <div
+            onClick={(e) => toggleFolder(folder.path, e)}
+            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+              enabledFolders.has(folder.path) ? "bg-green-500" : "bg-gray-300"
+            } cursor-pointer`}
+            title={
+              enabledFolders.has(folder.path)
+                ? "Disable folder"
+                : "Enable folder"
+            }
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                enabledFolders.has(folder.path)
+                  ? "translate-x-4"
+                  : "translate-x-1"
+              }`}
+            />
+          </div>
+        )}
       </div>
       {expanded.has(folder.path) &&
         folder.subfolders?.map((sub) => renderFolderTree(sub, depth + 1))}
@@ -168,7 +171,17 @@ export default function Sidebar({
 
   return (
     <aside className="w-64 bg-white border-r h-screen p-4 overflow-y-auto">
-      <h2 className="text-lg font-semibold mb-4">Folder Explorer</h2>
+      <div className="flex justify-left items-center mx-auto mb-2">
+        <Link href={"/"}>
+          <Image
+            src="/logo/DPDTV.png"
+            alt="DPD TV Logo"
+            width={150}
+            height={100}
+            className="object-contain"
+          />
+        </Link>
+      </div>
 
       <div className="mb-4">
         <div className="flex gap-2 flex-col">
@@ -185,7 +198,7 @@ export default function Sidebar({
               className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
             >
               <option value="internal">Internal</option>
-              <option value="external">External</option>
+              <option value="public">Public</option>
             </select>
           </div>
           <div className="flex-1">

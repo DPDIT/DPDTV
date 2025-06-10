@@ -77,7 +77,7 @@ export default function Upload({
     <>
       <button
         onClick={() => setIsModalOpen(true)}
-        className="flex items-center gap-2 px-4 py-2 my-2 bg-[#006747] text-white rounded-lg hover:bg-[#8B5B29] transition-colors duration-200 shadow-md"
+        className="flex items-center gap-2 px-4 py-2 my-2 bg-white text-black rounded-lg hover:bg-gray-300 transition-colors duration-200 shadow-md"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"

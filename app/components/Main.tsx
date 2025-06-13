@@ -97,9 +97,9 @@ export default function Main({ selectedFolder, currentRoute }: MainProps) {
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl text-white mb-2">{selectedFolder}</h1>
+      <h1 className="text-2xl text-white font-black mb-2">{selectedFolder}</h1>
       <Upload selectedFolder={selectedFolder} onUploadComplete={fetchImages} />
-      {currentRoute == "public" && <Notice />}
+      {currentRoute == "public" && <Notice currentRoute={currentRoute} />}
       <div className="grid grid-cols-3 gap-4 overflow-auto max-h-screen">
         {images.map(({ id, url, name }) => (
           <div

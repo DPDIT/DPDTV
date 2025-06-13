@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import Modal from "./Modal";
+import { upload } from "@vercel/blob/client";
 
 interface UploadProps {
   selectedFolder: string | null;
@@ -35,13 +36,20 @@ export default function Upload({
           formData.append("file", file);
           formData.append("path", `${selectedFolder}/${file.name}`);
 
-          const response = await fetch("/api/upload", {
-            method: "POST",
-            body: formData,
-          });
+          if (file.size > 4400000) {
+            await upload(`${selectedFolder}/${file.name}`, file, {
+              access: "public",
+              handleUploadUrl: "/api/upload-client",
+            });
+          } else {
+            const response = await fetch("/api/upload", {
+              method: "POST",
+              body: formData,
+            });
 
-          if (!response.ok) {
-            throw new Error(`Failed to upload ${file.name}`);
+            if (!response.ok) {
+              throw new Error(`Failed to upload ${file.name}`);
+            }
           }
 
           setUploadProgress((prev) => prev + 100 / acceptedFiles.length);

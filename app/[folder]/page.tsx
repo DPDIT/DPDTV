@@ -114,6 +114,14 @@ export default function ImageCarousel() {
     };
   }, [emblaApi, images]);
 
+  useEffect(() => {
+    const refresh = setInterval(() => {
+      window.location.reload();
+    }, 86400000); // 24 hours in milliseconds
+
+    return () => clearInterval(refresh);
+  }, []);
+
   if (isLoading) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

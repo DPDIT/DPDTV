@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 function parseLocalDateTime(localDateTime: string) {
-  if (!localDateTime) return null;
+  if (!localDateTime) return undefined;
   const safeString = localDateTime.replace("T", " ");
-  return new Date(safeString);
+  const date = new Date(safeString);
+  if (isNaN(date.getTime())) return undefined;
+  return date;
 }
 
 export async function POST(req: NextRequest) {
@@ -16,12 +18,19 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+    const scheduledDate = parseLocalDateTime(scheduledAt);
+    if (!scheduledDate) {
+      return NextResponse.json(
+        { error: "Invalid scheduledAt value" },
+        { status: 400 }
+      );
+    }
     let image = await prisma.image.findUnique({ where: { url } });
     if (image) {
       image = await prisma.image.update({
         where: { url },
         data: {
-          scheduledAt: parseLocalDateTime(scheduledAt),
+          scheduledAt: scheduledDate,
           expiresAt: expiresAt ? parseLocalDateTime(expiresAt) : null,
         },
       });
@@ -31,7 +40,7 @@ export async function POST(req: NextRequest) {
           url,
           name: url.split("/").pop() || "Unnamed",
           folder: url.split("/").slice(-4, -1).join("/"),
-          scheduledAt: parseLocalDateTime(scheduledAt),
+          scheduledAt: scheduledDate,
           expiresAt: expiresAt ? parseLocalDateTime(expiresAt) : null,
         },
       });

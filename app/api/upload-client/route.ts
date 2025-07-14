@@ -1,5 +1,6 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(request: Request): Promise<NextResponse> {
   const body = (await request.json()) as HandleUploadBody;
@@ -43,7 +44,30 @@ export async function POST(request: Request): Promise<NextResponse> {
         });
 
         try {
-          // No return value needed as the function expects void
+          // Parse scheduling fields from tokenPayload if present
+          let scheduledAt = new Date();
+          let expiresAt = null;
+          if (tokenPayload) {
+            try {
+              const payload = JSON.parse(tokenPayload);
+              if (payload.scheduledAt)
+                scheduledAt = new Date(payload.scheduledAt);
+              if (payload.expiresAt) expiresAt = new Date(payload.expiresAt);
+            } catch (e) {
+              // Ignore parse errors, use defaults
+            }
+          }
+
+          // Create DB entry for the image
+          await prisma.image.create({
+            data: {
+              url: blob.url,
+              name: blob.pathname.split("/").pop() || "Unnamed",
+              folder: blob.pathname.split("/").slice(0, -1).join("/"),
+              scheduledAt,
+              expiresAt,
+            },
+          });
         } catch (error) {
           console.error("Error in upload completion handler:", error);
           throw new Error("Failed to process upload completion");

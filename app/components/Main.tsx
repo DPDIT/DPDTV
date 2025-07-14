@@ -8,6 +8,8 @@ interface Image {
   id: string;
   url: string;
   name: string;
+  scheduledAt?: string;
+  expiresAt?: string | null;
 }
 
 interface MainProps {
@@ -32,7 +34,7 @@ export default function Main({ selectedFolder, currentRoute }: MainProps) {
 
     try {
       const res = await fetch(
-        `/api/images?folder=${encodeURIComponent(selectedFolder)}`
+        `/api/images?folder=${encodeURIComponent(selectedFolder)}&all=true`
       );
       if (!res.ok) throw new Error("Failed to fetch images");
       const data = await res.json();
@@ -86,7 +88,10 @@ export default function Main({ selectedFolder, currentRoute }: MainProps) {
   if (images.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full">
-        <Notice selectedFolder={selectedFolder} currentRoute={currentRoute} />
+        <Notice
+          selectedFolder={selectedFolder.split("/").pop()}
+          currentRoute={currentRoute}
+        />
         <Upload
           selectedFolder={selectedFolder}
           onUploadComplete={fetchImages}
@@ -95,18 +100,33 @@ export default function Main({ selectedFolder, currentRoute }: MainProps) {
     );
   }
 
+  const isExpired = (date: string | null | undefined) => {
+    if (!date) return false;
+    const expireDate = new Date(date);
+    if (isNaN(expireDate.getTime())) return false;
+    return expireDate < new Date();
+  };
+
   return (
     <div className="p-4">
-      <h1 className="text-2xl text-white font-black mb-2">{selectedFolder}</h1>
-      <Upload selectedFolder={selectedFolder} onUploadComplete={fetchImages} />
-      {currentRoute == "public" && <Notice currentRoute={currentRoute} />}
-      <div className="grid grid-cols-3 gap-4 overflow-auto max-h-screen">
-        {images.map(({ id, url, name }) => (
+      <div className="flex items-center justify-between my-2">
+        <h1 className="text-2xl text-white font-black">
+          {selectedFolder.split("/").pop()}
+        </h1>
+        <Upload
+          selectedFolder={selectedFolder.split("/").pop() || null}
+          onUploadComplete={fetchImages}
+        />
+        {currentRoute == "public" && <Notice currentRoute={currentRoute} />}
+      </div>
+
+      <div className="grid grid-cols-3 gap-4 overflow-auto">
+        {images.map(({ id, url, name, scheduledAt, expiresAt }) => (
           <div
             key={id}
-            className="border rounded overflow-hidden relative group flex flex-col"
+            className="border rounded overflow-hidden relative group flex flex-col bg-gray-50"
           >
-            <div className="flex-1 relative bg-gray-100">
+            <div className="flex-1 relative">
               <img
                 src={url}
                 alt={name}
@@ -136,8 +156,21 @@ export default function Main({ selectedFolder, currentRoute }: MainProps) {
                 )}
               </button>
             </div>
-            <div className="p-1 text-sm text-center truncate bg-white">
-              {name}
+
+            <div className="p-1 text-sm font-semibold truncate">
+              <h1>{name}</h1>
+              <h2>
+                Display Start Date:{" "}
+                {scheduledAt ? new Date(scheduledAt).toLocaleString() : "-"}
+              </h2>
+              <h2
+                className={
+                  isExpired(expiresAt) ? "text-red-500" : "text-green-500"
+                }
+              >
+                Display Stop Date:{" "}
+                {expiresAt ? new Date(expiresAt).toLocaleString() : "-"}
+              </h2>
             </div>
           </div>
         ))}

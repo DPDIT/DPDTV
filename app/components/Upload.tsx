@@ -10,6 +10,21 @@ interface UploadProps {
   onUploadComplete?: () => void;
 }
 
+function getLocalDateTimeString(date = new Date()) {
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return (
+    date.getFullYear() +
+    "-" +
+    pad(date.getMonth() + 1) +
+    "-" +
+    pad(date.getDate()) +
+    "T" +
+    pad(date.getHours()) +
+    ":" +
+    pad(date.getMinutes())
+  );
+}
+
 export default function Upload({
   selectedFolder,
   onUploadComplete,
@@ -18,6 +33,25 @@ export default function Upload({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  // Scheduling state
+  const [scheduledAt, setScheduledAt] = useState(() =>
+    getLocalDateTimeString()
+  );
+  const [expiresAt, setExpiresAt] = useState(() =>
+    getLocalDateTimeString(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000))
+  );
+
+  const updateImageMeta = async (url: string) => {
+    await fetch("/api/images/meta", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        url,
+        scheduledAt,
+        expiresAt: expiresAt || null,
+      }),
+    });
+  };
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
@@ -36,21 +70,31 @@ export default function Upload({
           formData.append("file", file);
           formData.append("path", `${selectedFolder}/${file.name}`);
 
+          let uploadedUrl = "";
           if (file.size > 4400000) {
-            await upload(`${selectedFolder}/${file.name}`, file, {
-              access: "public",
-              handleUploadUrl: "/api/upload-client",
-            });
+            const result = await upload(
+              `${selectedFolder}/${file.name}`,
+              file,
+              {
+                access: "public",
+                handleUploadUrl: "/api/upload-client",
+              }
+            );
+            uploadedUrl = result.url;
           } else {
             const response = await fetch("/api/upload", {
               method: "POST",
               body: formData,
             });
-
             if (!response.ok) {
               throw new Error(`Failed to upload ${file.name}`);
             }
+            const data = await response.json();
+            uploadedUrl = data.url;
           }
+
+          // Update scheduling/expiration in DB after upload
+          await updateImageMeta(uploadedUrl);
 
           setUploadProgress((prev) => prev + 100 / acceptedFiles.length);
         }
@@ -63,7 +107,7 @@ export default function Upload({
         setIsUploading(false);
       }
     },
-    [selectedFolder, onUploadComplete]
+    [selectedFolder, onUploadComplete, scheduledAt, expiresAt]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -85,7 +129,7 @@ export default function Upload({
     <>
       <button
         onClick={() => setIsModalOpen(true)}
-        className="flex items-center gap-2 px-4 py-2 my-2 bg-white text-black rounded-lg hover:bg-gray-300 transition-colors duration-200 shadow-md"
+        className="flex items-center gap-2 px-4 py-2 bg-white text-black rounded-lg hover:bg-gray-300 transition-colors duration-200 shadow-md"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -103,6 +147,26 @@ export default function Upload({
       </button>
 
       <Modal isOpen={isModalOpen} onClose={handleClose}>
+        {/* Scheduling controls */}
+        <div className="mb-4 flex flex-col gap-2 justify-center items-start">
+          <label className="text-sm font-medium">Display Date:</label>
+          <input
+            type="datetime-local"
+            className="border rounded px-2 py-1"
+            value={scheduledAt}
+            onChange={(e) => setScheduledAt(e.target.value)}
+            disabled={isUploading}
+          />
+          <label className="text-sm font-medium">Expiry Date:</label>{" "}
+          <input
+            type="datetime-local"
+            className="border rounded px-2 py-1"
+            value={expiresAt}
+            onChange={(e) => setExpiresAt(e.target.value)}
+            disabled={isUploading}
+          />
+        </div>
+
         <div
           {...getRootProps()}
           className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors

@@ -114,7 +114,7 @@ export default function Main({ selectedFolder, currentRoute }: MainProps) {
           {selectedFolder.split("/").pop()}
         </h1>
         <Upload
-          selectedFolder={selectedFolder.split("/").pop() || null}
+          selectedFolder={selectedFolder}
           onUploadComplete={fetchImages}
         />
         {currentRoute == "public" && <Notice currentRoute={currentRoute} />}

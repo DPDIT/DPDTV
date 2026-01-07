@@ -30,9 +30,10 @@ export default function Sidebar({
   const [route, setRoute] = useState("internal");
   const [enabledFolders, setEnabledFolders] = useState<Set<string>>(new Set());
 
-  const currentYear = new Date().getFullYear().toString();
-  const years = Array.from({ length: 5 }, (_, i) =>
-    (parseInt(currentYear) + i).toString()
+  const baseYear = 2025;
+  const yearsSinceBaseYear = new Date().getFullYear() - baseYear;
+  const years = Array.from({ length: yearsSinceBaseYear + 1 }, (_, i) =>
+    (baseYear + i).toString()
   );
 
   useEffect(() => {
